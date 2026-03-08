@@ -5,11 +5,13 @@
  * Sets up the rendering pipeline and animation loop.
  */
 
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { createCamera } from "./rendering/camera";
-import { createRenderer } from "./rendering/renderer";
-import { createScene } from "./rendering/scene";
-import { createGridMesh } from "./geometry/mesh";
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { createMeshDeformer } from './deform/createMeshDeformer';
+import { waveHeight } from './deform/heightFunctions';
+import { createCamera } from './rendering/camera';
+import { createRenderer } from './rendering/renderer';
+import { createScene } from './rendering/scene';
+import { createGridMesh } from './geometry/mesh';
 
 // ============================================================================
 // Scene Initialization
@@ -18,6 +20,13 @@ import { createGridMesh } from "./geometry/mesh";
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer();
+const terrainParams = {
+  amplitude: 1,
+  freqX: 2,
+  freqZ: 2,
+  freq: 3,
+  scale: 0.2,
+};
 
 // Attach the WebGL canvas to the DOM
 document.body.appendChild(renderer.domElement);
@@ -38,13 +47,14 @@ controls.dampingFactor = 0.05; // Damping inertia
 const mesh = createGridMesh(10, 20);
 scene.add(mesh);
 
-deformMesh(mesh);
+const deform = createMeshDeformer(waveHeight, terrainParams);
+deform(mesh);
 
 // ============================================================================
 // Window Resize Handler
 // ============================================================================
 
-window.addEventListener("resize", () => {
+window.addEventListener('resize', () => {
   // Update camera aspect ratio to match new window dimensions
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -52,22 +62,6 @@ window.addEventListener("resize", () => {
   // Resize renderer to fill the window
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-function deformMesh(mesh) {
-  const positions = mesh.geometry.attributes.position.array;
-
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = positions[i];
-    const z = positions[i + 2];
-
-    const height = Math.sin(x * 2) * Math.cos(z * 2);
-
-    positions[i + 1] = height;
-  }
-
-  mesh.geometry.attributes.position.needsUpdate = true;
-  mesh.geometry.computeVertexNormals();
-}
 
 // ============================================================================
 // Animation Loop
