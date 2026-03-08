@@ -7,12 +7,19 @@
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createMeshDeformer } from './deform/createMeshDeformer';
-import { waveHeight } from './deform/heightFunctions';
+import { waveHeight, radialHeight, saddleHeight } from './deform/heightFunctions';
 import { createCamera } from './rendering/camera';
 import { createRenderer } from './rendering/renderer';
 import { createGUI } from './ui/gui';
 import { createScene } from './rendering/scene';
 import { createGridMesh } from './geometry/mesh';
+
+/**
+ * TODO
+ * - Deform mesh based on the intersections of a raycast emitted from the mouse and the mesh
+ * - Experiment with procedural texture generation
+ * - Add a simple logger (maybe in gui, with char limit) for the math nerds
+ */
 
 // ============================================================================
 // Scene Initialization
@@ -23,8 +30,17 @@ const camera = createCamera();
 const renderer = createRenderer();
 const terrainParams = {
   amplitude: 1,
-  freqX: 1,
-  freqZ: 1,
+  freqX: 2,
+  freqZ: 2,
+  freq: 3,
+  scale: 0.1,
+  heightType: 'wave',
+  speed: 1,
+};
+const heightFunctions = {
+  wave: waveHeight,
+  radial: radialHeight,
+  saddle: saddleHeight,
 };
 
 // Attach the WebGL canvas to the DOM
@@ -46,10 +62,34 @@ controls.dampingFactor = 0.05; // Damping inertia
 const mesh = createGridMesh(10, 20);
 scene.add(mesh);
 
-const deform = createMeshDeformer(waveHeight, terrainParams);
-createGUI(terrainParams, () => {
-  deform(mesh);
-});
+const originalPositions = mesh.geometry.attributes.position.array.slice();
+
+let deform = createMeshDeformer(
+  heightFunctions[terrainParams.heightType],
+  terrainParams,
+  originalPositions
+);
+
+createGUI(
+  terrainParams,
+  heightFunctions,
+
+  // When height function changes
+  () => {
+    deform = createMeshDeformer(
+      heightFunctions[terrainParams.heightType],
+      terrainParams,
+      originalPositions
+    );
+
+    deform(mesh);
+  },
+
+  // When parameters change
+  () => {
+    deform(mesh);
+  }
+);
 
 // ============================================================================
 // Window Resize Handler
@@ -67,12 +107,16 @@ window.addEventListener('resize', () => {
 // ============================================================================
 // Animation Loop
 // ============================================================================
+let time = 0;
 
 /**
  * Main animation loop - called every frame
  * Handles control updates and rendering
  */
 function animate() {
+  time += 0.01;
+  deform(mesh, time);
+
   controls.update(); // Update camera controls with damping
   renderer.render(scene, camera); // Render the scene from camera's perspective
   requestAnimationFrame(animate); // Schedule next frame
