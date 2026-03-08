@@ -10,6 +10,7 @@ import { createMeshDeformer } from './deform/createMeshDeformer';
 import { waveHeight } from './deform/heightFunctions';
 import { createCamera } from './rendering/camera';
 import { createRenderer } from './rendering/renderer';
+import { createGUI } from './ui/gui';
 import { createScene } from './rendering/scene';
 import { createGridMesh } from './geometry/mesh';
 
@@ -22,10 +23,8 @@ const camera = createCamera();
 const renderer = createRenderer();
 const terrainParams = {
   amplitude: 1,
-  freqX: 2,
-  freqZ: 2,
-  freq: 3,
-  scale: 0.2,
+  freqX: 1,
+  freqZ: 1,
 };
 
 // Attach the WebGL canvas to the DOM
@@ -48,7 +47,9 @@ const mesh = createGridMesh(10, 20);
 scene.add(mesh);
 
 const deform = createMeshDeformer(waveHeight, terrainParams);
-deform(mesh);
+createGUI(terrainParams, () => {
+  deform(mesh);
+});
 
 // ============================================================================
 // Window Resize Handler
