@@ -1,8 +1,15 @@
 /**
  * Main Application Entry Point
  *
- * Initializes the Three.js scene with a basic wireframe mesh.
- * Sets up the rendering pipeline and animation loop.
+ * Initializes a Three.js scene with an animated, deformable wireframe mesh.
+ * The mesh can be deformed using various height functions (wave, radial, saddle)
+ * with parameters controllable through a GUI interface.
+ *
+ * Features:
+ * - Procedural grid mesh generation
+ * - Real-time vertex deformation using mathematical functions
+ * - Interactive parameter controls via lil-gui
+ * - Orbit camera controls for scene navigation
  */
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -28,6 +35,19 @@ import { createGridMesh } from './geometry/mesh';
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer();
+
+/**
+ * Terrain deformation parameters
+ * These values control the shape and animation of the mesh deformation
+ * @type {Object}
+ * @property {number} amplitude - Vertical displacement magnitude (0-5)
+ * @property {number} freqX - Frequency of waves along X axis (0-10)
+ * @property {number} freqZ - Frequency of waves along Z axis (0-10)
+ * @property {number} freq - Frequency for radial patterns (0-10)
+ * @property {number} scale - Scaling factor for saddle function (0-1)
+ * @property {string} heightType - Type of height function: 'wave', 'radial', or 'saddle'
+ * @property {number} speed - Animation speed multiplier (0-5)
+ */
 const terrainParams = {
   amplitude: 1,
   freqX: 2,
@@ -37,6 +57,11 @@ const terrainParams = {
   heightType: 'wave',
   speed: 1,
 };
+
+/**
+ * Available height functions for mesh deformation
+ * @type {Object.<string, Function>}
+ */
 const heightFunctions = {
   wave: waveHeight,
   radial: radialHeight,
@@ -62,8 +87,10 @@ controls.dampingFactor = 0.05; // Damping inertia
 const mesh = createGridMesh(10, 20);
 scene.add(mesh);
 
+// Store original vertex positions for resetting deformations
 const originalPositions = mesh.geometry.attributes.position.array.slice();
 
+// Initialize the mesh deformer with current height function
 let deform = createMeshDeformer(
   heightFunctions[terrainParams.heightType],
   terrainParams,
@@ -107,15 +134,18 @@ window.addEventListener('resize', () => {
 // ============================================================================
 // Animation Loop
 // ============================================================================
+
+/** @type {number} Global time variable for animation, incremented each frame */
 let time = 0;
 
 /**
  * Main animation loop - called every frame
- * Handles control updates and rendering
+ * Updates mesh deformation, camera controls, and renders the scene
+ * @function animate
  */
 function animate() {
-  time += 0.01;
-  deform(mesh, time);
+  time += 0.01; // Increment time for animated deformations
+  deform(mesh, time); // Apply deformation to mesh
 
   controls.update(); // Update camera controls with damping
   renderer.render(scene, camera); // Render the scene from camera's perspective
