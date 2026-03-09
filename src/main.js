@@ -22,10 +22,14 @@ import { createScene } from './rendering/scene';
 import { createGridMesh } from './geometry/mesh';
 
 /**
- * TODO
+ * TODO:
+ * -
+ * - Add a few noise functions to generate more realistic terrain
+ * - Experiment with different color gradient functions and with terrain style colors
+ * - Group gui elements in folders
+ * - Add a simple logger (maybe in gui, with char limit) for the math nerds
  * - Deform mesh based on the intersections of a raycast emitted from the mouse and the mesh
  * - Experiment with procedural texture generation
- * - Add a simple logger (maybe in gui, with char limit) for the math nerds
  */
 
 // ============================================================================
