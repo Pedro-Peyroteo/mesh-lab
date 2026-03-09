@@ -24,6 +24,8 @@ export function createGUI(params, heightFunctions, onHeightChange, onParamChange
   gui.add(params, 'scale', 0, 1, 0.01).onChange(onParamChange);
   gui.add(params, 'speed', 0, 5, 0.01);
   gui.add(params, 'heightType', Object.keys(heightFunctions)).onChange(onHeightChange);
-
+  gui.add(params, 'noiseScale', 0, 2, 0.01);
+  gui.add(params, 'noiseAmplitude', 0, 10, 0.01);
+  gui.add(params, 'noiseSpeed', 0, 3, 0.01);
   return gui;
 }

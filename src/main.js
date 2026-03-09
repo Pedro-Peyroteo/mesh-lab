@@ -15,6 +15,7 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createMeshDeformer } from './deform/createMeshDeformer';
 import { waveHeight, radialHeight, saddleHeight } from './deform/heightFunctions';
+import { applyNoise } from './deform/applyNoise';
 import { createCamera } from './rendering/camera';
 import { createRenderer } from './rendering/renderer';
 import { createGUI } from './ui/gui';
@@ -23,11 +24,10 @@ import { createGridMesh } from './geometry/mesh';
 
 /**
  * TODO:
- * -
  * - Add a few noise functions to generate more realistic terrain
  * - Experiment with different color gradient functions and with terrain style colors
- * - Group gui elements in folders
  * - Add a simple logger (maybe in gui, with char limit) for the math nerds
+ * - Group gui elements in folders
  * - Deform mesh based on the intersections of a raycast emitted from the mouse and the mesh
  * - Experiment with procedural texture generation
  */
@@ -60,6 +60,9 @@ const terrainParams = {
   scale: 0.1,
   heightType: 'wave',
   speed: 1,
+  noiseScale: 0.2,
+  noiseAmplitude: 2,
+  noiseSpeed: 0.2,
 };
 
 /**
@@ -70,6 +73,11 @@ const heightFunctions = {
   wave: waveHeight,
   radial: radialHeight,
   saddle: saddleHeight,
+};
+
+const heightFunctionOptions = {
+  ...heightFunctions,
+  noise: null,
 };
 
 // Attach the WebGL canvas to the DOM
@@ -96,17 +104,24 @@ const originalPositions = mesh.geometry.attributes.position.array.slice();
 
 // Initialize the mesh deformer with current height function
 let deform = createMeshDeformer(
-  heightFunctions[terrainParams.heightType],
+  heightFunctions[terrainParams.heightType] ?? waveHeight,
   terrainParams,
   originalPositions
 );
 
+let noiseDeform = applyNoise(terrainParams);
+
 createGUI(
   terrainParams,
-  heightFunctions,
+  heightFunctionOptions,
 
   // When height function changes
   () => {
+    if (terrainParams.heightType === 'noise') {
+      noiseDeform = applyNoise(terrainParams);
+      return;
+    }
+
     deform = createMeshDeformer(
       heightFunctions[terrainParams.heightType],
       terrainParams,
@@ -118,7 +133,13 @@ createGUI(
 
   // When parameters change
   () => {
-    deform(mesh);
+    if (terrainParams.heightType === 'noise') {
+      noiseDeform = applyNoise(terrainParams);
+      noiseDeform(mesh, time);
+      return;
+    }
+
+    deform(mesh, time);
   }
 );
 
@@ -149,10 +170,13 @@ let time = 0;
  */
 function animate() {
   time += 0.01; // Increment time for animated deformations
-  deform(mesh, time); // Apply deformation to mesh
+
+  if (terrainParams.heightType === 'noise') noiseDeform(mesh, time);
+  else deform(mesh, time); // Apply deformation to mesh
 
   controls.update(); // Update camera controls with damping
   renderer.render(scene, camera); // Render the scene from camera's perspective
+
   requestAnimationFrame(animate); // Schedule next frame
 }
 
